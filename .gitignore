@@ -331,3 +331,4 @@ gemma-3-270m-*/
 mlc-env/
 mlc-llm/
 *.safetensors
+gemma-3-270m-it-qat-q4_0-unquantized
