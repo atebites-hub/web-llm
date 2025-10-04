@@ -333,45 +333,45 @@ error: unknown type name 'DLManagedTensorVersioned'
 
 ---
 
-## 🤖 AGENT GROUP 1: WEBLLM RUNTIME COMPATIBILITY (ADAPTED)
-**FOCUS**: WebLLM runtime compatibility, model integration, and browser-ready functionality
+## 🤖 AGENT GROUP 1: TVM CORE SYSTEM FIXES
+**FOCUS**: TVM FFI system, core imports, and fundamental compatibility
 
 ### HIGH PRIORITY (Critical Path):
-1. **Verify WebLLM Runtime Compatibility**
-   - **Problem**: Need to ensure @mlc-ai/web-runtime: 0.18.0-dev2 supports Gemma-3-270m
-   - **Root Cause**: WebLLM runtime may need updates for latest model features
-   - **Solution**: Test WebLLM runtime with Gemma-3-270m model configuration
-   - **Files**: `package.json`, `src/engine.ts`, WebLLM runtime modules
-   - **Test**: `node test_gemma3_webllm_simple.js`
+1. **Fix TVM FFI Circular Import Issue**
+   - **Problem**: `tvm.ffi.core` module not available, causing circular import
+   - **Root Cause**: TVM FFI submodule not properly initialized or built
+   - **Solution**: Initialize TVM FFI submodule and rebuild core extensions
+   - **Files**: `3rdparty/tvm/3rdparty/tvm-ffi/`, `3rdparty/tvm/python/tvm/ffi/core.pyx`
+   - **Test**: `python3 -c "import tvm.ffi.registry; print('Success')"`
 
-2. **Download and Validate Gemma-3-270m Model**
-   - **Problem**: Model files not present in current environment
-   - **Solution**: Download model files and validate configuration
-   - **Commands**: `python3 download_gemma3_model.py`
-   - **Files**: `gemma-3-270m-it-qat-q4_0-unquantized/` directory
+2. **Rebuild TVM FFI Core Extensions**
+   - **Problem**: `core.cpython-312-darwin.so` symbolic link broken
+   - **Solution**: Rebuild TVM FFI system with proper C++ extensions
+   - **Commands**: `cd 3rdparty/tvm && python3 -m pip install -e . --force-reinstall`
+   - **Files**: `3rdparty/tvm/python/tvm/ffi/core.cpython-312-darwin.so`
 
-3. **Test WebLLM Model Loading**
-   - **Problem**: Need to verify WebLLM can load Gemma-3-270m model
-   - **Solution**: Test model loading with WebLLM runtime
-   - **Files**: `test_gemma3_webllm_simple.js`, WebLLM engine
-   - **Test**: Verify model loads without errors in browser environment
+3. **Fix register_global_func Import**
+   - **Problem**: `register_global_func` not available in TVM v0.22
+   - **Solution**: Find new location in `tvm.ffi.registry` or create compatibility layer
+   - **Files**: `python/mlc_llm/__init__.py`, `python/mlc_llm/interface/calibrate.py`
+   - **Test**: `python3 -c "from tvm import register_func; print('Success')"`
 
 ### MEDIUM PRIORITY (Functionality):
-4. **Test WebLLM Build and Runtime**
-   - **Goal**: Ensure WebLLM builds successfully and runtime works
-   - **Test**: `npm run build`, `node test_gemma3_webllm_simple.js`
-   - **Files**: WebLLM source files, build configuration
+4. **Test TVM Import Without Errors**
+   - **Goal**: Ensure `import tvm` works without ValueError or circular import
+   - **Test**: `python3 -c "import tvm; print('TVM version:', tvm.__version__)"`
+   - **Files**: All TVM Python modules
 
-5. **Validate Model Configuration**
-   - **Goal**: Ensure Gemma-3-270m model configuration is correct
-   - **Test**: Check model config files, quantization settings
-   - **Files**: Model config files, WebLLM model records
+5. **Validate TVM FFI System**
+   - **Goal**: Ensure FFI registry and core modules work properly
+   - **Test**: `python3 -c "import tvm.ffi.registry; print('FFI registry works')"`
+   - **Files**: `tvm/ffi/registry.py`, `tvm/ffi/core.py`
 
 ### LOW PRIORITY (Optimization):
-6. **Create WebLLM Compatibility Layer**
-   - **Goal**: Create compatibility shims for WebLLM runtime if needed
-   - **Files**: WebLLM source files, runtime modules
-   - **Functions**: Runtime compatibility, model loading optimizations
+6. **Create TVM Compatibility Layer**
+   - **Goal**: Create compatibility shims for missing functions
+   - **Files**: New compatibility files in `python/mlc_llm/`
+   - **Functions**: `register_global_func`, missing object types
 
 ---
 
@@ -465,10 +465,10 @@ error: unknown type name 'DLManagedTensorVersioned'
 
 ## 🎯 SUCCESS CRITERIA FOR ALL AGENTS
 
-### Phase 1 Success (Agent 1 - Adapted):
-- ✅ WebLLM runtime working with @mlc-ai/web-runtime: 0.18.0-dev2
-- ✅ Gemma-3-270m model configuration validated
-- ✅ WebLLM build successful and functional
+### Phase 1 Success (Agent 1):
+- ✅ TVM imports without errors
+- ✅ `tvm.ffi.registry` module available
+- ✅ `register_global_func` functionality working
 
 ### Phase 2 Success (Agent 2):
 - ✅ MLC-LLM builds successfully
