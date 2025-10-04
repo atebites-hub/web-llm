@@ -330,3 +330,4 @@ lib
 gemma-3-270m-*/
 *.safetensors
 gemma-3-270m-it-qat-q4_0-unquantized
+mlc-llm
