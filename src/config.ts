@@ -391,6 +391,17 @@ export const prebuiltAppConfig: AppConfig = {
         context_window_size: 4096,
       },
     },
+    // Gemma-3-270m (Local model - needs compilation)
+    {
+      model: "./gemma-3-270m-it-qat-q4_0-unquantized",
+      model_id: "Gemma-3-270m-IT-QAT-q4_0-MLC",
+      model_lib: "TBD", // Will be generated after compilation
+      vram_required_MB: 800, // Estimated for 270M model with 4-bit quantization
+      low_resource_required: true,
+      overrides: {
+        context_window_size: 32768, // From model config
+      },
+    },
     // Llama-3.1
     {
       model: "https://huggingface.co/mlc-ai/Llama-3.1-8B-Instruct-q4f32_1-MLC",
