@@ -9,6 +9,8 @@
     "build": "rollup -c && ./cleanup-index-js.sh",
     "lint": "npx eslint ./src/ ./tests/ ./examples/ && npx prettier ./src/ ./tests/ ./examples/ --check",
     "test": "yarn jest",
+    "test:gemma3": "node tests/gemma3/test_gemma3_features.js",
+    "test:gemma3:all": "node tests/gemma3/test_gemma3_features.js && node tests/gemma3/test_browser_inference.js && node tests/gemma3/test_performance.js",
     "format": "prettier --write \"./src/\" \"./examples/\" \"./tests/\"",
     "prepare": "husky"
   },

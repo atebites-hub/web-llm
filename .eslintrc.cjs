@@ -15,6 +15,17 @@ module.exports = {
             "no-undef": "off",
             "@typescript-eslint/no-unused-vars": "off"
           }
+        },
+        {
+          "files": ["tests/**/*.js", "tests/**/*.ts"],
+          "env": {
+            "node": true,
+            "browser": true
+          },
+          "rules": {
+            "no-undef": "off",
+            "@typescript-eslint/no-unused-vars": "off"
+          }
         }
     ]
 };

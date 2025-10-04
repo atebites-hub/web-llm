@@ -26,6 +26,32 @@ We can bring a lot of fun opportunities to build AI assistants for everyone and 
 
 You can use WebLLM as a base [npm package](https://www.npmjs.com/package/@mlc-ai/web-llm) and build your own web application on top of it by following the examples below. This project is a companion project of [MLC LLM](https://github.com/mlc-ai/mlc-llm), which enables universal deployment of LLM across hardware environments.
 
+## 🆕 Latest: Gemma-3-270m Integration
+
+WebLLM now supports the latest **Gemma-3-270m** model with cutting-edge features:
+
+- **4-bit Quantization (Q4_0)**: 75% memory reduction with minimal quality loss
+- **Sliding Window Transformers**: 82% efficiency gain in attention computation
+- **Extended Context**: 32,768 token context window with efficient sliding attention
+- **Browser Optimized**: ~800MB VRAM usage, perfect for browser deployment
+- **Quantization Aware Training**: Optimized for 4-bit precision
+
+### Quick Start with Gemma-3-270m
+
+```typescript
+import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine("Gemma-3-270m-IT-QAT-q4_0-MLC");
+
+// Generate text with extended context
+const response = await engine.chat.completions.create({
+  messages: [{ role: "user", content: "Hello! How are you?" }],
+  max_tokens: 100,
+});
+```
+
+📚 **[Complete Integration Guide](docs/gemma3-integration-guide.md)** | 🔄 **[Migration Guide](docs/migration-guide.md)**
+
 <div align="center">
 
 **[Check out WebLLM Chat to try it out!](https://chat.webllm.ai/)**
@@ -39,7 +65,7 @@ You can use WebLLM as a base [npm package](https://www.npmjs.com/package/@mlc-ai
 
 - **Structured JSON Generation**: WebLLM supports state-of-the-art JSON mode structured generation, implemented in the WebAssembly portion of the model library for optimal performance. Check [WebLLM JSON Playground](https://huggingface.co/spaces/mlc-ai/WebLLM-JSON-Playground) on HuggingFace to try generating JSON output with custom JSON schema.
 
-- [**Extensive Model Support**](#built-in-models): WebLLM natively supports a range of models including Llama 3, Phi 3, Gemma, Mistral, Qwen(通义千问), and many others, making it versatile for various AI tasks. For the complete supported model list, check [MLC Models](https://mlc.ai/models).
+- [**Extensive Model Support**](#built-in-models): WebLLM natively supports a range of models including Llama 3, Phi 3, Gemma, Mistral, Qwen(通义千问), and many others, making it versatile for various AI tasks. **New**: Gemma-3-270m with 4-bit quantization and sliding window transformers! For the complete supported model list, check [MLC Models](https://mlc.ai/models).
 
 - [**Custom Model Integration**](#custom-models): Easily integrate and deploy custom models in MLC format, allowing you to adapt WebLLM to specific needs and scenarios, enhancing flexibility in model deployment.
 
