@@ -328,7 +328,5 @@ lib
 
 # Gemma3 model files (too large for GitHub)
 gemma-3-270m-*/
-mlc-env/
-mlc-llm/
 *.safetensors
 gemma-3-270m-it-qat-q4_0-unquantized
