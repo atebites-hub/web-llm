@@ -325,3 +325,9 @@ lib
 .parcel-cache
 
 **/.next
+
+# Gemma3 model files (too large for GitHub)
+gemma-3-270m-*/
+mlc-env/
+mlc-llm/
+*.safetensors
