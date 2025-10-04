@@ -859,3 +859,326 @@ The Gemma-3-270m model is fully integrated and ready for WebLLM deployment. All 
 - **Incremental Approach**: Test each phase before proceeding
 - **Documentation**: Document all changes for future reference
 - **Rollback Plan**: Ability to revert to working state if issues arise
+
+---
+
+## 🚨 AGENT GROUP 5: SYSTEMATIC CONST_CORRECTNESS FIXES
+**FOCUS**: Resolve TVM v0.22 const correctness issues through systematic const_cast application
+
+### 🎯 MISSION
+Systematically fix all const correctness errors in MLC-LLM codebase by applying const_cast to enable object modification while maintaining TVM v0.22 compatibility.
+
+### 📊 AGENT GROUP 5 PROGRESS ASSESSMENT
+
+#### ✅ **COMPLETED WORK**:
+- **Agent 5A**: Applied const_cast to engine state and request management
+  - Fixed `estate->running_rsentries_changed` const issues
+  - Fixed `estate->running_queue.erase()` const issues  
+  - Fixed `estate->waiting_queue.insert()` const issues
+  - Applied const_cast to `LogitProcessorObj`, `SamplerObj` methods
+  - Files: `action_commons.cc`, `batch_decode.cc`, `batch_draft.cc`
+
+#### ⚠️ **ISSUES IDENTIFIED**:
+1. **Syntax Errors Introduced**: Multiple malformed statements with nested function calls
+   - `RangeTimer _(RangeTimer _(RangeTimer _(&time_loading});time_loading);time_loading);`
+   - `params.reserve(model_metadata.params.size()});`
+   - `params.push_back(Optional<NDArray>();`
+   - `SendToWorker(loaded_params[i], /*receiver_id=*/group_id * group_size});`
+
+2. **Incomplete Coverage**: Many const correctness errors still remain
+   - Build still failing with 10+ errors
+   - Not all const_cast applications were applied correctly
+   - Some files may have been missed
+
+#### 🔧 **REQUIRED FIXES**:
+1. **Clean up malformed statements** - Remove nested function calls and extra braces
+2. **Complete const_cast coverage** - Apply to all remaining const correctness errors
+3. **Test incrementally** - Verify each fix before proceeding
+4. **Review approach** - Ensure const_cast is applied correctly without syntax errors
+
+#### 📋 **FEEDBACK FOR AGENT GROUP 5**:
+- **Good Progress**: Successfully applied const_cast to many const correctness issues
+- **Quality Issue**: Syntax errors introduced during automated fixes need cleanup
+- **Coverage Gap**: Not all const correctness errors have been addressed
+- **Next Steps**: Clean up syntax errors and complete remaining const_cast applications
+
+### 📊 SCOPE ANALYSIS
+**Problem**: TVM v0.22 FFI macros generate `const` operators that prevent object modification, but MLC-LLM needs to modify these objects.
+
+**Impact**: Hundreds of const correctness errors across the entire MLC-LLM codebase requiring systematic fixes.
+
+**Solution**: Apply `const_cast` systematically to remove const qualifiers where MLC-LLM needs to modify objects.
+
+### 🤖 AGENT 5A: ENGINE STATE & REQUEST MANAGEMENT
+**FOCUS**: Fix const correctness errors in engine state, request state, and core engine functionality
+
+#### HIGH PRIORITY TASKS:
+1. **Fix Engine State Const Issues**
+   - **Files**: `cpp/serve/engine_state.h`, `cpp/serve/engine.cc`
+   - **Issues**: `estate->running_rsentries_changed`, `estate->spec_draft_length`, `estate->disaggregation`
+   - **Solution**: Apply `const_cast<EngineStateObj*>(estate.get())` for mutable access
+   - **Test**: `cd /Users/jaskarn/github/web-llm/mlc-llm && CMAKE_POLICY_VERSION_MINIMUM=3.5 pip install -e . --force-reinstall`
+
+2. **Fix Request State Const Issues**
+   - **Files**: `cpp/serve/request_state.h`, `cpp/serve/engine_actions/action_commons.cc`
+   - **Issues**: `rstate->entries`, `rstate->metrics`, `rsentry->status`
+   - **Solution**: Apply `const_cast<RequestStateNode*>(rstate.get())` for mutable access
+   - **Test**: Build and verify no const correctness errors
+
+3. **Fix Request Model State Const Issues**
+   - **Files**: `cpp/serve/request_state.h`, `cpp/serve/engine_actions/batch_decode.cc`
+   - **Issues**: `mstate->num_tokens_for_next_decode`, `mstate->inputs`, `mstate->cached_committed_tokens`
+   - **Solution**: Apply `const_cast<RequestModelStateNode*>(mstate.get())` for mutable access
+   - **Test**: Build and verify no const correctness errors
+
+#### MEDIUM PRIORITY TASKS:
+4. **Fix Engine Configuration Const Issues**
+   - **Files**: `cpp/serve/config.h`, `cpp/serve/engine.cc`
+   - **Issues**: `engine_config->prefill_mode`, `engine_config->spec_draft_length`
+   - **Solution**: Apply `const_cast<EngineConfigNode*>(engine_config.get())` for mutable access
+
+5. **Fix Prefix Cache Const Issues**
+   - **Files**: `cpp/serve/prefix_cache.h`, `cpp/serve/engine_actions/batch_prefill_base.cc`
+   - **Issues**: `estate->prefix_cache->TryFreeMemory()`, `estate->prefix_cache->HasSequence()`
+   - **Solution**: Apply `const_cast<PrefixCacheObj*>(estate->prefix_cache.get())` for mutable access
+
+#### LOW PRIORITY TASKS:
+6. **Fix Event Trace Recorder Const Issues**
+   - **Files**: `cpp/serve/event_trace_recorder.h`, `cpp/serve/engine_actions/batch_decode.cc`
+   - **Issues**: `trace_recorder.value()->AddEvent()`
+   - **Solution**: Apply `const_cast<EventTraceRecorderObj*>(trace_recorder.value().get())` for mutable access
+
+### 🤖 AGENT 5B: DATA STRUCTURES & ARRAYS
+**FOCUS**: Fix const correctness errors in data structures, arrays, and container operations
+
+#### HIGH PRIORITY TASKS:
+1. **Fix Array Const Issues**
+   - **Files**: `cpp/serve/engine_actions/batch_prefill_base.cc`, `cpp/serve/engine_actions/action_commons.cc`
+   - **Issues**: `mstate->inputs.clear()`, `mstate->inputs.push_back()`, `mstate->inputs.erase()`
+   - **Solution**: Apply `const_cast<Array<Data>*>(&mstate->inputs)` for mutable access
+   - **Test**: Build and verify no const correctness errors
+
+2. **Fix Vector Const Issues**
+   - **Files**: `cpp/serve/engine_actions/batch_decode.cc`, `cpp/serve/engine_actions/batch_draft.cc`
+   - **Issues**: `rngs.push_back()`, `estate->running_queue.erase()`, `estate->waiting_queue.erase()`
+   - **Solution**: Apply `const_cast<std::vector<Type>*>(&container)` for mutable access
+   - **Test**: Build and verify no const correctness errors
+
+3. **Fix Unordered Map Const Issues**
+   - **Files**: `cpp/serve/engine.cc`, `cpp/serve/engine_actions/action_commons.cc`
+   - **Issues**: `estate->request_states.erase()`, `estate->request_states.insert()`
+   - **Solution**: Apply `const_cast<std::unordered_map<Key, Value>*>(&container)` for mutable access
+   - **Test**: Build and verify no const correctness errors
+
+#### MEDIUM PRIORITY TASKS:
+4. **Fix String Const Issues**
+   - **Files**: `cpp/serve/engine_actions/batch_decode.cc`, `cpp/serve/engine_actions/action_commons.cc`
+   - **Issues**: `rsentry->extra_prefix_string += token_table[token_id]`
+   - **Solution**: Apply `const_cast<std::string*>(&rsentry->extra_prefix_string)` for mutable access
+
+5. **Fix Atomic Const Issues**
+   - **Files**: `cpp/serve/engine_actions/action_commons.cc`
+   - **Issues**: `stream_output->unpacked = false`
+   - **Solution**: Apply `const_cast<std::atomic<bool>*>(&stream_output->unpacked)` for mutable access
+
+#### LOW PRIORITY TASKS:
+6. **Fix Time Point Const Issues**
+   - **Files**: `cpp/serve/engine_actions/action_commons.cc`
+   - **Issues**: `rstate->metrics.finish_time_point = trequest_finish`
+   - **Solution**: Apply `const_cast<std::chrono::time_point*>(&rstate->metrics.finish_time_point)` for mutable access
+
+### 🤖 AGENT 5C: MODEL & INFERENCE OPERATIONS
+**FOCUS**: Fix const correctness errors in model operations, inference, and token processing
+
+#### HIGH PRIORITY TASKS:
+1. **Fix Model Const Issues**
+   - **Files**: `cpp/serve/engine.cc`, `cpp/serve/data.cc`
+   - **Issues**: `model->LoadParams()`, `model->SetMaxNumSequence()`, `model->CreateKVCache()`
+   - **Solution**: Apply `const_cast<ModelObj*>(model.get())` for mutable access
+   - **Test**: Build and verify no const correctness errors
+
+2. **Fix Tokenizer Const Issues**
+   - **Files**: `cpp/serve/data.cc`, `cpp/serve/engine.cc`
+   - **Issues**: `tokenizer->PostProcessedTokenTable()`, `tokenizer->GetPrefixTokenMask()`
+   - **Solution**: Apply `const_cast<TokenizerObj*>(tokenizer.get())` for mutable access
+   - **Test**: Build and verify no const correctness errors
+
+3. **Fix Logit Processor Const Issues**
+   - **Files**: `cpp/serve/engine_actions/batch_decode.cc`, `cpp/serve/engine_actions/batch_draft.cc`
+   - **Issues**: `logit_processor_->InplaceUpdateLogits()`, `logit_processor_->ComputeProbsFromLogits()`
+   - **Solution**: Apply `const_cast<LogitProcessorObj*>(logit_processor_.get())` for mutable access
+   - **Test**: Build and verify no const correctness errors
+
+#### MEDIUM PRIORITY TASKS:
+4. **Fix Sampler Const Issues**
+   - **Files**: `cpp/serve/engine_actions/batch_decode.cc`, `cpp/serve/engine_actions/batch_draft.cc`
+   - **Issues**: `sampler_->BatchRenormalizeProbsByTopP()`, `sampler_->BatchSampleTokensWithProbAfterTopP()`
+   - **Solution**: Apply `const_cast<SamplerObj*>(sampler_.get())` for mutable access
+
+5. **Fix Draft Token Workspace Manager Const Issues**
+   - **Files**: `cpp/serve/engine_actions/batch_draft.cc`
+   - **Issues**: `draft_token_workspace_manager_->AllocSlots()`
+   - **Solution**: Apply `const_cast<DraftTokenWorkspaceManagerObj*>(draft_token_workspace_manager_.get())` for mutable access
+
+#### LOW PRIORITY TASKS:
+6. **Fix Metrics Const Issues**
+   - **Files**: `cpp/serve/engine_actions/batch_decode.cc`, `cpp/serve/engine_actions/action_commons.cc`
+   - **Issues**: `estate->metrics.engine_decode_time_sum += elapsed_time`
+   - **Solution**: Apply `const_cast<MetricsObj*>(&estate->metrics)` for mutable access
+
+### 🔄 COORDINATION PROTOCOL
+
+#### SEQUENTIAL DEPENDENCIES:
+1. **Agent 5A** → **Agent 5B** → **Agent 5C** (Core → Data → Model)
+2. **Parallel Work**: Agents can work on different file types simultaneously
+3. **Communication**: Update scratchpad with progress and blockers
+4. **Testing**: Each agent tests their changes before handoff
+
+#### TESTING STRATEGY:
+```bash
+# Test build after each batch of fixes
+cd /Users/jaskarn/github/web-llm/mlc-llm && CMAKE_POLICY_VERSION_MINIMUM=3.5 pip install -e . --force-reinstall 2>&1 | grep -A 2 -B 2 "const.*but function is not marked const" | head -10
+
+# Test specific error patterns
+grep -r "const.*but function is not marked const" build/ 2>/dev/null || echo "No const correctness errors found"
+```
+
+#### PROGRESS TRACKING:
+- **Agent 5A**: Track engine state, request state, and core engine fixes
+- **Agent 5B**: Track data structures, arrays, and container fixes  
+- **Agent 5C**: Track model operations, inference, and token processing fixes
+
+### ✅ SUCCESS CRITERIA
+
+#### Phase 1 Success (Agent 5A):
+- ✅ Engine state const issues resolved
+- ✅ Request state const issues resolved
+- ✅ Request model state const issues resolved
+
+#### Phase 2 Success (Agent 5B):
+- ✅ Array const issues resolved
+- ✅ Vector const issues resolved
+- ✅ Unordered map const issues resolved
+
+#### Phase 3 Success (Agent 5C):
+- ✅ Model const issues resolved
+- ✅ Tokenizer const issues resolved
+- ✅ Logit processor const issues resolved
+
+#### Final Success Criteria:
+- ✅ All const correctness errors resolved
+- ✅ MLC-LLM builds successfully
+- ✅ No const_cast warnings or errors
+- ✅ TVM v0.22 compatibility maintained
+
+### 🎯 AGENT PROMPTS
+
+#### AGENT 5A PROMPT:
+```
+You are Agent 5A focused on fixing const correctness errors in engine state, request state, and core engine functionality. Your mission is to systematically apply const_cast to resolve TVM v0.22 const correctness issues in the MLC-LLM codebase.
+
+FOCUS AREAS:
+- Engine state management (estate->running_rsentries_changed, estate->spec_draft_length)
+- Request state management (rstate->entries, rstate->metrics, rsentry->status)
+- Request model state management (mstate->num_tokens_for_next_decode, mstate->inputs)
+
+APPROACH:
+1. Identify const correctness errors in your assigned files
+2. Apply const_cast to remove const qualifiers where MLC-LLM needs to modify objects
+3. Test each fix incrementally
+4. Update scratchpad with progress
+
+KEY FILES:
+- cpp/serve/engine_state.h
+- cpp/serve/engine.cc
+- cpp/serve/request_state.h
+- cpp/serve/engine_actions/action_commons.cc
+
+TEST COMMAND:
+cd /Users/jaskarn/github/web-llm/mlc-llm && CMAKE_POLICY_VERSION_MINIMUM=3.5 pip install -e . --force-reinstall 2>&1 | grep -A 2 -B 2 "const.*but function is not marked const" | head -10
+```
+
+#### AGENT 5B PROMPT:
+```
+You are Agent 5B focused on fixing const correctness errors in data structures, arrays, and container operations. Your mission is to systematically apply const_cast to resolve TVM v0.22 const correctness issues in the MLC-LLM codebase.
+
+FOCUS AREAS:
+- Array operations (mstate->inputs.clear(), mstate->inputs.push_back())
+- Vector operations (rngs.push_back(), estate->running_queue.erase())
+- Unordered map operations (estate->request_states.erase())
+
+APPROACH:
+1. Identify const correctness errors in your assigned files
+2. Apply const_cast to remove const qualifiers where MLC-LLM needs to modify objects
+3. Test each fix incrementally
+4. Update scratchpad with progress
+
+KEY FILES:
+- cpp/serve/engine_actions/batch_prefill_base.cc
+- cpp/serve/engine_actions/action_commons.cc
+- cpp/serve/engine_actions/batch_decode.cc
+- cpp/serve/engine_actions/batch_draft.cc
+
+TEST COMMAND:
+cd /Users/jaskarn/github/web-llm/mlc-llm && CMAKE_POLICY_VERSION_MINIMUM=3.5 pip install -e . --force-reinstall 2>&1 | grep -A 2 -B 2 "const.*but function is not marked const" | head -10
+```
+
+#### AGENT 5C PROMPT:
+```
+You are Agent 5C focused on fixing const correctness errors in model operations, inference, and token processing. Your mission is to systematically apply const_cast to resolve TVM v0.22 const correctness issues in the MLC-LLM codebase.
+
+FOCUS AREAS:
+- Model operations (model->LoadParams(), model->SetMaxNumSequence())
+- Tokenizer operations (tokenizer->PostProcessedTokenTable())
+- Logit processor operations (logit_processor_->InplaceUpdateLogits())
+- Sampler operations (sampler_->BatchRenormalizeProbsByTopP())
+
+APPROACH:
+1. Identify const correctness errors in your assigned files
+2. Apply const_cast to remove const qualifiers where MLC-LLM needs to modify objects
+3. Test each fix incrementally
+4. Update scratchpad with progress
+
+KEY FILES:
+- cpp/serve/engine.cc
+- cpp/serve/data.cc
+- cpp/serve/engine_actions/batch_decode.cc
+- cpp/serve/engine_actions/batch_draft.cc
+
+TEST COMMAND:
+cd /Users/jaskarn/github/web-llm/mlc-llm && CMAKE_POLICY_VERSION_MINIMUM=3.5 pip install -e . --force-reinstall 2>&1 | grep -A 2 -B 2 "const.*but function is not marked const" | head -10
+```
+
+### 🎯 COORDINATION INSTRUCTIONS
+
+#### WORKING DIRECTORY:
+**Primary**: `/Users/jaskarn/github/web-llm/mlc-llm/`
+
+#### COMMUNICATION PROTOCOL:
+1. **Daily Updates**: Each agent updates scratchpad with progress
+2. **Blockers**: Report blockers immediately to other agents
+3. **Testing**: Test changes before handoff to next agent
+4. **Documentation**: Document all const_cast applications
+
+#### SUCCESS METRICS:
+- **Progress**: Number of const correctness errors resolved
+- **Quality**: No new errors introduced
+- **Efficiency**: Systematic approach to minimize rework
+- **Collaboration**: Effective coordination between agents
+
+### 🚀 EXPECTED OUTCOMES
+
+#### Short-term (1-2 days):
+- All const correctness errors identified and categorized
+- Systematic const_cast application strategy implemented
+- First batch of fixes applied and tested
+
+#### Medium-term (3-5 days):
+- All const correctness errors resolved
+- MLC-LLM builds successfully
+- TVM v0.22 compatibility maintained
+
+#### Long-term (1 week):
+- Complete TVM v0.22 upgrade successful
+- MLC-LLM CLI functionality restored
+- Gemma-3-270m model compilation ready
